@@ -1,122 +1,67 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+// Tuodaan Reactin useEffect- ja useState-hookit "react"-kirjastosta.
+// useState: mahdollistaa komponentin oman tilan (muuttuvan datan) tallentamisen.
+// useEffect: mahdollistaa "sivuvaikutusten" (esim. datan haun) suorittamisen komponentin renderöinnin yhteydessä.
+import { useEffect, useState } from 'react'
 
+// Tuodaan aiemmin luotu (lib/supabaseClient.js-tiedostossa), valmiiksi konfiguroitu Supabase-client-olio.
+import { supabase } from './lib/supabaseClient'
+
+// Määritellään App-niminen React-komponentti (funktio, joka palauttaa UI:n).
 function App() {
-  const [count, setCount] = useState(0)
+  // Luodaan tila-muuttuja muscleGroups, alkuarvo tyhjä taulukko.
+  // setMuscleGroups on funktio, jolla tätä arvoa päivitetään myöhemmin.
+  const [muscleGroups, setMuscleGroups] = useState([])
 
+  // Luodaan tila-muuttuja error, alkuarvo null (ei virhettä).
+  // setError on funktio, jolla tätä arvoa päivitetään myöhemmin.
+  const [error, setError] = useState(null)
+
+  // useEffect ajaa sisällään olevan koodin kerran, kun komponentti näytetään ensimmäistä kertaa
+  // (tyhjä riippuvuustaulukko [] lopussa tarkoittaa "aja vain kerran, ei uudelleen").
+  useEffect(() => {
+    // Määritellään async-funktio, koska Supabase-kysely on asynkroninen (kestää hetken, ei valmistu heti).
+    async function fetchMuscleGroups() {
+      // Odotetaan (await) Supabase-kyselyn valmistumista:
+      // haetaan kaikki (*) rivit muscle_groups-taulusta, järjestettynä nimen mukaan.
+      // Tulos puretaan suoraan kahdeksi muuttujaksi: data (rivit) ja error (mahdollinen virhe).
+      const { data, error } = await supabase
+        .from('muscle_groups')
+        .select('*')
+        .order('name')
+
+      // Jos kysely palautti virheen, tallennetaan virheviesti error-tilaan.
+      if (error) {
+        setError(error.message)
+      } else {
+        // Muuten tallennetaan haettu data muscleGroups-tilaan.
+        setMuscleGroups(data)
+      }
+    }
+
+    // Kutsutaan yllä määriteltyä funktiota, jotta haku oikeasti käynnistyy.
+    fetchMuscleGroups()
+  }, []) // Tyhjä riippuvuustaulukko: efekti ajetaan vain kerran komponentin ensimmäisellä renderöinnillä.
+
+  // Tämä on komponentin palauttama UI (JSX-syntaksia, muistuttaa HTML:ää).
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div>
+      {/* Otsikko, näytetään aina */}
+      <h1>Supabase-yhteystesti</h1>
 
-      <div className="ticks"></div>
+      {/* Näytetään virheviesti punaisella VAIN jos error-muuttuja ei ole tyhjä/null. */}
+      {error && <p style={{ color: 'red' }}>Virhe: {error}</p>}
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      {/* Lista, joka käy läpi muscleGroups-taulukon jokaisen alkion (mg) */}
+      <ul>
+        {muscleGroups.map((mg) => (
+          // Luodaan yksi <li>-elementti per lihasryhmä.
+          // key={mg.id} auttaa Reactia seuraamaan listan alkioita tehokkaasti (pakollinen listoissa).
+          <li key={mg.id}>{mg.name}</li>
+        ))}
+      </ul>
+    </div>
   )
 }
 
+// Tehdään App-komponentista muiden tiedostojen käytettävissä oleva (esim. main.jsx tarvitsee tämän).
 export default App
