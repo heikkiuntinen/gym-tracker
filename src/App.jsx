@@ -1,67 +1,55 @@
-// Tuodaan Reactin useEffect- ja useState-hookit "react"-kirjastosta.
-// useState: mahdollistaa komponentin oman tilan (muuttuvan datan) tallentamisen.
-// useEffect: mahdollistaa "sivuvaikutusten" (esim. datan haun) suorittamisen komponentin renderöinnin yhteydessä.
 import { useEffect, useState } from 'react'
-
-// Tuodaan aiemmin luotu (lib/supabaseClient.js-tiedostossa), valmiiksi konfiguroitu Supabase-client-olio.
 import { supabase } from './lib/supabaseClient'
+import Auth from './Auth'
 
-// Määritellään App-niminen React-komponentti (funktio, joka palauttaa UI:n).
 function App() {
-  // Luodaan tila-muuttuja muscleGroups, alkuarvo tyhjä taulukko.
-  // setMuscleGroups on funktio, jolla tätä arvoa päivitetään myöhemmin.
-  const [muscleGroups, setMuscleGroups] = useState([])
+  // Tallennetaan kirjautuneen käyttäjän istunto (session). 
+  // null = ei kirjautunut, olio = kirjautunut ja sisältää mm. käyttäjän tiedot.
+  const [session, setSession] = useState(null)
 
-  // Luodaan tila-muuttuja error, alkuarvo null (ei virhettä).
-  // setError on funktio, jolla tätä arvoa päivitetään myöhemmin.
-  const [error, setError] = useState(null)
+  // Tila, joka kertoo onko sovellus vielä tarkistamassa alkutilaa
+  // (estää välähdyksen kirjautumislomakkeesta ennen kuin oikea tila on selvillä).
+  const [loading, setLoading] = useState(true)
 
-  // useEffect ajaa sisällään olevan koodin kerran, kun komponentti näytetään ensimmäistä kertaa
-  // (tyhjä riippuvuustaulukko [] lopussa tarkoittaa "aja vain kerran, ei uudelleen").
   useEffect(() => {
-    // Määritellään async-funktio, koska Supabase-kysely on asynkroninen (kestää hetken, ei valmistu heti).
-    async function fetchMuscleGroups() {
-      // Odotetaan (await) Supabase-kyselyn valmistumista:
-      // haetaan kaikki (*) rivit muscle_groups-taulusta, järjestettynä nimen mukaan.
-      // Tulos puretaan suoraan kahdeksi muuttujaksi: data (rivit) ja error (mahdollinen virhe).
-      const { data, error } = await supabase
-        .from('muscle_groups')
-        .select('*')
-        .order('name')
+    // Haetaan nykyinen istunto heti kun sovellus latautuu 
+    // (esim. jos käyttäjä oli jo kirjautunut edellisellä kerralla, istunto löytyy selaimen muistista).
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      setLoading(false)
+    })
 
-      // Jos kysely palautti virheen, tallennetaan virheviesti error-tilaan.
-      if (error) {
-        setError(error.message)
-      } else {
-        // Muuten tallennetaan haettu data muscleGroups-tilaan.
-        setMuscleGroups(data)
+    // Rekisteröidään kuuntelija, joka ajetaan AINA kun kirjautumistila muuttuu
+    // (kirjaudutaan sisään, kirjaudutaan ulos, istunto vanhenee jne.).
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session)
       }
-    }
+    )
 
-    // Kutsutaan yllä määriteltyä funktiota, jotta haku oikeasti käynnistyy.
-    fetchMuscleGroups()
-  }, []) // Tyhjä riippuvuustaulukko: efekti ajetaan vain kerran komponentin ensimmäisellä renderöinnillä.
+    // Siivousfunktio: lopetetaan kuuntelu kun komponentti poistuu käytöstä,
+    // ettei jää turhia kuuntelijoita muistiin.
+    return () => subscription.unsubscribe()
+  }, [])
 
-  // Tämä on komponentin palauttama UI (JSX-syntaksia, muistuttaa HTML:ää).
+  // Kirjautumisen tarkistus on vielä kesken - näytetään yksinkertainen latausviesti.
+  if (loading) {
+    return <p>Ladataan...</p>
+  }
+
+  // Ei istuntoa = ei kirjautunut -> näytetään kirjautumislomake.
+  if (!session) {
+    return <Auth />
+  }
+
+  // Session olemassa = kirjautunut -> näytetään varsinainen sovellus.
   return (
     <div>
-      {/* Otsikko, näytetään aina */}
-      <h1>Supabase-yhteystesti</h1>
-
-      {/* Näytetään virheviesti punaisella VAIN jos error-muuttuja ei ole tyhjä/null. */}
-      {error && <p style={{ color: 'red' }}>Virhe: {error}</p>}
-
-      {/* Lista, joka käy läpi muscleGroups-taulukon jokaisen alkion (mg) */}
-      <ul>
-        {muscleGroups.map((mg) => (
-          // Luodaan yksi <li>-elementti per lihasryhmä.
-          // key={mg.id} auttaa Reactia seuraamaan listan alkioita tehokkaasti (pakollinen listoissa).
-          <li key={mg.id}>{mg.name}</li>
-        ))}
-      </ul>
+      <h1>Painopäiväkirja</h1>
+      <p>Kirjauduit sisään: {session.user.email}</p>
+      <button onClick={() => supabase.auth.signOut()}>Kirjaudu ulos</button>
     </div>
   )
 }
 
-// Tehdään App-komponentista muiden tiedostojen käytettävissä oleva (esim. main.jsx tarvitsee tämän).
 export default App

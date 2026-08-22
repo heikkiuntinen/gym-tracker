@@ -38,7 +38,7 @@ If you are developing a production application, we recommend using TypeScript wi
 │   │   └── supabaseClient.js
 │   └── main.jsx
 └── vite.config.js
-``
+```
 
 ## Sovelluksen käynnistäminen
 ```bash
