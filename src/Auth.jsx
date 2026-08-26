@@ -41,7 +41,7 @@ function Auth() {
 
   return (
     <div>
-      <h1>Painopäiväkirja</h1>
+      <h1>Treeniloki</h1>
 
       {/* Otsikko vaihtuu sen mukaan kummassa tilassa lomake on: rekisteröinti vai kirjautuminen */}
       <h2>{isSignUp ? 'Luo tili' : 'Kirjaudu sisään'}</h2>

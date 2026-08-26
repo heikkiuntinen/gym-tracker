@@ -47,7 +47,7 @@ function App() {
   // Session olemassa = kirjautunut -> näytetään varsinainen sovellus.
   return (
     <div>
-      <h1>Painopäiväkirja</h1>
+      <h1>Treeniloki</h1>
       <p>Kirjauduit sisään: {session.user.email}</p>
       <button onClick={() => supabase.auth.signOut()}>Kirjaudu ulos</button>
 

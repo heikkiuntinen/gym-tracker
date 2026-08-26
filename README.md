@@ -1,4 +1,4 @@
-# Painopäiväkirja
+# Treeniloki-sovellus
 
 Henkilökohtainen salikehityksen seurantasovellus. Projektin tarkoitus oli
 opetella React-, Supabase- ja SQL-teknologioita käytännön kautta, ja samalla
