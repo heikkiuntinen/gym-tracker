@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './lib/supabaseClient'
 import Auth from './Auth'
+import Exercises from './Exercises'
+import Routines from './Routines'   
 
 function App() {
   // Tallennetaan kirjautuneen käyttäjän istunto (session). 
@@ -48,8 +50,14 @@ function App() {
       <h1>Painopäiväkirja</h1>
       <p>Kirjauduit sisään: {session.user.email}</p>
       <button onClick={() => supabase.auth.signOut()}>Kirjaudu ulos</button>
+
+      <Exercises />
+      <Routines />
     </div>
   )
 }
 
+
+
 export default App
+

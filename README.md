@@ -33,10 +33,13 @@ If you are developing a production application, we recommend using TypeScript wi
 │   │   ├── hero.png
 │   │   ├── react.svg
 │   │   └── vite.svg
+│   ├── Auth.jsx
+│   ├── Exercises.jsx
 │   ├── index.css
 │   ├── lib
 │   │   └── supabaseClient.js
-│   └── main.jsx
+│   ├── main.jsx
+│   └── Routines.jsx
 └── vite.config.js
 ```
 
