@@ -2,7 +2,7 @@
 
 Henkilökohtainen salikehityksen seurantasovellus. Projektin tarkoitus oli
 opetella React-, Supabase- ja SQL-teknologioita käytännön kautta, ja samalla
-rakentaa itselle sopiva, joustava työkalu treenien seuraamiseen.
+rakentaa itselle sopiva sovellus treenien seuraamiseen.
 
 ## Teknologiat
 
