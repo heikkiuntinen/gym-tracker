@@ -49,3 +49,8 @@ rakentaa itselle sopiva sovellus treenien seuraamiseen.
 ```bash
 npm run dev
 ````
+
+API välimuistin päivitys supabasen SQL-tablessa:
+```
+notify pgrst, 'reload schema'
+```
