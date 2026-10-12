@@ -41,7 +41,8 @@ rakentaa itselle sopiva sovellus treenien seuraamiseen.
 │   ├── lib
 │   │   └── supabaseClient.js
 │   ├── main.jsx
-│   └── Routines.jsx
+│   ├── Routines.jsx
+│   └── Workout.jsx
 └── vite.config.js
 ```
 
