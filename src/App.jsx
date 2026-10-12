@@ -3,6 +3,7 @@ import { supabase } from './lib/supabaseClient'
 import Auth from './Auth'
 import Exercises from './Exercises'
 import Routines from './Routines'   
+import Workout from './Workout'
 
 function App() {
   // Tallennetaan kirjautuneen käyttäjän istunto (session). 
@@ -51,6 +52,7 @@ function App() {
       <p>Kirjauduit sisään: {session.user.email}</p>
       <button onClick={() => supabase.auth.signOut()}>Kirjaudu ulos</button>
 
+      <Workout />
       <Exercises />
       <Routines />
     </div>
