@@ -8,6 +8,12 @@ function formatRange(min, max) {
   return min === max ? `${min}` : `${min}–${max}`
 }
 
+// Apufunktio: muotoilee sarjan näytettäväksi.
+// Jos paino on nolla (esim. istumaannousu), näytetään pelkät toistot.
+function formatSet(weight, reps) {
+  return Number(weight) === 0 ? `${reps} toistoa` : `${weight} kg × ${reps}`
+}
+
 // Määritellään Workout-niminen React-komponentti.
 function Workout() {
   // Lista ohjelmista, joista treenin voi aloittaa.
@@ -18,6 +24,10 @@ function Workout() {
   const [items, setItems] = useState([])
   // Käynnissä olevaan treeniin kirjatut sarjat.
   const [sets, setSets] = useState([])
+  // Saman ohjelman edellisen valmiin treenin sarjat ("mitä tein viimeksi").
+  const [previousSets, setPreviousSets] = useState([])
+  // Edellisen treenin aloitusaika, näytetään päivämääränä.
+  const [previousDate, setPreviousDate] = useState(null)
   // Jokaisen liikkeen syöttökentät omana oliona, avaimena exercise_id: { weight, reps }.
   const [inputs, setInputs] = useState({})
   // Virheviesti ja latauksen tila.
@@ -41,7 +51,7 @@ function Workout() {
     else setRoutines(data)
   }
 
-  // Hakee käynnissä olevan treenin sekä sen liikkeet ja sarjat.
+  // Hakee käynnissä olevan treenin sekä sen liikkeet, sarjat ja edellisen treenin sarjat.
   async function fetchActiveWorkout() {
     // Käynnissä oleva treeni = rivi, jonka completed_at on tyhjä.
     // maybeSingle palauttaa null, jos riviä ei ole.
@@ -63,12 +73,18 @@ function Workout() {
       setWorkout(null)
       setItems([])
       setSets([])
+      setPreviousSets([])
+      setPreviousDate(null)
       return
     }
 
     // Haetaan ohjelman liikkeet tavoitteineen. Jos ohjelma on poistettu (routine_id tyhjä),
     // liikelistaa ei ole, ja treenin voi vain päättää tai perua.
     let routineItems = []
+    // Edellisen treenin sarjat ja aloitusaika, tyhjiä jos edellistä treeniä ei ole.
+    let prevSets = []
+    let prevDate = null
+
     if (active.routine_id) {
       const { data, error: itemsError } = await supabase
         .from('routine_exercises')
@@ -81,6 +97,38 @@ function Workout() {
         return
       }
       routineItems = data
+
+      // Haetaan saman ohjelman edellinen VALMIS treeni (completed_at ei ole tyhjä).
+      // Käynnissä oleva treeni ei osu tähän, koska sen completed_at on tyhjä.
+      const { data: prevWorkout, error: prevError } = await supabase
+        .from('workouts')
+        .select('id, started_at')
+        .eq('routine_id', active.routine_id)
+        .not('completed_at', 'is', null)
+        .order('started_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (prevError) {
+        setError(prevError.message)
+        return
+      }
+
+      // Jos edellinen treeni löytyi, haetaan sen sarjat.
+      if (prevWorkout) {
+        const { data: prevData, error: prevSetsError } = await supabase
+          .from('sets')
+          .select('exercise_id, set_number, weight_kg, reps')
+          .eq('workout_id', prevWorkout.id)
+          .order('set_number')
+
+        if (prevSetsError) {
+          setError(prevSetsError.message)
+          return
+        }
+        prevSets = prevData
+        prevDate = prevWorkout.started_at
+      }
     }
 
     // Haetaan tähän treeniin jo kirjatut sarjat.
@@ -98,6 +146,8 @@ function Workout() {
     setWorkout(active)
     setItems(routineItems)
     setSets(loggedSets)
+    setPreviousSets(prevSets)
+    setPreviousDate(prevDate)
   }
 
   // Aloittaa uuden treenin valitusta ohjelmasta.
@@ -227,6 +277,8 @@ function Workout() {
             // Tämän liikkeen kirjatut sarjat ja syöttökenttien arvot.
             const exerciseSets = sets.filter((s) => s.exercise_id === item.exercises.id)
             const input = inputs[item.exercises.id] || { weight: '', reps: '' }
+            // Tämän liikkeen sarjat edellisellä kerralla.
+            const lastSets = previousSets.filter((s) => s.exercise_id === item.exercises.id)
 
             return (
               <div key={item.id} style={{ border: '1px solid #ccc', margin: '12px 0', padding: '8px' }}>
@@ -234,10 +286,18 @@ function Workout() {
                 {' '}
                 (tavoite {formatRange(item.target_sets_min, item.target_sets_max)} × {formatRange(item.target_reps_min, item.target_reps_max)})
 
+                {/* Mitä tein viimeksi: näytetään vain jos tälle liikkeelle löytyi edellisiä sarjoja */}
+                {lastSets.length > 0 && (
+                  <p>
+                    Viimeksi ({new Date(previousDate).toLocaleDateString('fi-FI')}):{' '}
+                    {lastSets.map((s) => formatSet(s.weight_kg, s.reps)).join(', ')}
+                  </p>
+                )}
+
                 <ul>
                   {exerciseSets.map((s) => (
                     <li key={s.id}>
-                      Sarja {s.set_number}: {s.weight_kg} kg × {s.reps}
+                      Sarja {s.set_number}: {formatSet(s.weight_kg, s.reps)}
                       {' '}
                       <button type="button" onClick={() => handleDeleteSet(s.id)}>Poista</button>
                     </li>
